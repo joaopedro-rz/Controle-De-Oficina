@@ -7,19 +7,19 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { z } from "zod";
+import * as yup from "yup";
 import { Users } from "lucide-react";
 import { apiClient } from "@/lib/api";
 
-const signUpSchema = z.object({
-  email: z.string().trim().email({ message: "Email inválido" }).max(255),
-  password: z.string().min(6, { message: "A senha deve ter pelo menos 6 caracteres" }),
-  full_name: z.string().trim().nonempty({ message: "Nome completo é obrigatório" }).max(100),
+const signUpSchema = yup.object({
+  email: yup.string().trim().email("Email inválido").max(255).required("Email é obrigatório"),
+  password: yup.string().min(6, "A senha deve ter pelo menos 6 caracteres").required("Senha é obrigatória"),
+  full_name: yup.string().trim().max(100).required("Nome completo é obrigatório"),
 });
 
-const loginSchema = z.object({
-  email: z.string().trim().email({ message: "Email inválido" }).max(255),
-  password: z.string().nonempty({ message: "Senha é obrigatória" }),
+const loginSchema = yup.object({
+  email: yup.string().trim().email("Email inválido").max(255).required("Email é obrigatório"),
+  password: yup.string().required("Senha é obrigatória"),
 });
 
 const Auth = () => {
@@ -35,27 +35,29 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
-      const validation = loginSchema.safeParse(loginForm);
-      if (!validation.success) {
-        toast.error(validation.error.errors[0].message);
-        return;
-      }
+      await loginSchema.validate(loginForm, { abortEarly: false });
+
       const resp = await apiClient.post("/auth/login", {
         email: loginForm.email,
         password: loginForm.password,
       });
 
-      // Esperamos que o backend retorne { token, user }
-      const { token } = resp.data ?? {};
+      // Esperamos que o backend retorne { token, refreshToken, user }
+      const { token, refreshToken } = resp.data ?? {};
       if (!token) {
         toast.error("Credenciais inválidas");
         return;
       }
       localStorage.setItem("token", token);
+      if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
       toast.success("Login realizado com sucesso!");
       navigate("/dashboard");
     } catch (error: any) {
-      toast.error("Erro ao fazer login");
+      if (error?.name === "ValidationError" && Array.isArray(error?.errors) && error.errors.length) {
+        toast.error(error.errors[0]);
+      } else {
+        toast.error("Erro ao fazer login");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -66,11 +68,7 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
-      const validation = signUpSchema.safeParse(signupForm);
-      if (!validation.success) {
-        toast.error(validation.error.errors[0].message);
-        return;
-      }
+      await signUpSchema.validate(signupForm, { abortEarly: false });
       const resp = await apiClient.post("/auth/signup", {
         email: signupForm.email,
         password: signupForm.password,
@@ -86,7 +84,11 @@ const Auth = () => {
       setActiveTab("login");
       setLoginForm({ email: signupForm.email, password: "" });
     } catch (error: any) {
-      toast.error("Erro ao criar conta");
+      if (error?.name === "ValidationError" && Array.isArray(error?.errors) && error.errors.length) {
+        toast.error(error.errors[0]);
+      } else {
+        toast.error("Erro ao criar conta");
+      }
     } finally {
       setIsLoading(false);
     }
