@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, UserCheck, UserX } from "lucide-react";
+import { Plus, Search, UserCheck, UserX, History } from "lucide-react";
 import { toast } from "sonner";
 import VolunteerForm from "./VolunteerForm";
+import VolunteerHistory from "./VolunteerHistory";
 import { apiClient } from "@/lib/api";
 
 interface Volunteer {
@@ -26,6 +27,7 @@ const VolunteersList = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [selectedVolunteer, setSelectedVolunteer] = useState<Volunteer | null>(null);
 
   useEffect(() => {
@@ -59,14 +61,34 @@ const VolunteersList = () => {
     setShowForm(true);
   };
 
+  const handleHistory = (volunteer: Volunteer) => {
+    setSelectedVolunteer(volunteer);
+    setShowHistory(true);
+  };
+
   const handleCloseForm = () => {
     setShowForm(false);
     setSelectedVolunteer(null);
     fetchVolunteers();
   };
 
+  const handleCloseHistory = () => {
+    setShowHistory(false);
+    setSelectedVolunteer(null);
+  };
+
   if (showForm) {
     return <VolunteerForm volunteer={selectedVolunteer} onClose={handleCloseForm} />;
+  }
+
+  if (showHistory && selectedVolunteer) {
+    return (
+      <VolunteerHistory
+        volunteerId={selectedVolunteer.id}
+        volunteerName={selectedVolunteer.full_name}
+        onClose={handleCloseHistory}
+      />
+    );
   }
 
   return (
@@ -124,11 +146,19 @@ const VolunteersList = () => {
                         )}
                       </Badge>
                     </div>
-                    <div className="text-xs text-muted-foreground space-y-1">
+                    <div className="text-xs text-muted-foreground space-y-1 mb-3">
                       <p>Entrada: {new Date(volunteer.entry_date).toLocaleDateString("pt-BR")}</p>
                       {volunteer.exit_date && (
                         <p>Saída: {new Date(volunteer.exit_date).toLocaleDateString("pt-BR")}</p>
                       )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleEdit(volunteer); }}>
+                        Editar
+                      </Button>
+                      <Button variant="secondary" size="sm" className="gap-1" onClick={(e) => { e.stopPropagation(); handleHistory(volunteer); }}>
+                        <History className="h-3 w-3" /> Histórico
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
