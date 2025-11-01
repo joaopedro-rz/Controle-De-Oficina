@@ -25,6 +25,17 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    if (status === 401) {
+      // token inválido/expirado: remover e redirecionar
+      localStorage.removeItem('token');
+      if (window.location.pathname !== '/auth') {
+        window.location.href = '/auth';
+      }
+    }
 let isRefreshing = false as boolean;
 let pendingRequests: Array<(token: string) => void> = [];
 
