@@ -21,5 +21,11 @@ import { JwtAuthGuard } from './jwt.guard';
   ],
   controllers: [AppController, AuthController, VolunteersController, WorkshopsController, ParticipationsController, ParticipacoesPtController],
   providers: [AppService, DataStoreService, AuthService, JwtAuthGuard],
+import { AuthModule } from './auth/auth.module';
+
+@Module({
+  imports: [AuthModule],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}
