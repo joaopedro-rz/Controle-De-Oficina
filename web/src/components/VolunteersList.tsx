@@ -25,7 +25,11 @@ const VolunteersList = () => {
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [filteredVolunteers, setFilteredVolunteers] = useState<Volunteer[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(20);
+  const [total, setTotal] = useState(0);
   const [showForm, setShowForm] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedVolunteer, setSelectedVolunteer] = useState<Volunteer | null>(null);
@@ -35,6 +39,7 @@ const VolunteersList = () => {
   }, []);
 
   useEffect(() => {
+    // local filtering (keeps previous behaviour while server-side search is also supported)
     const filtered = volunteers.filter((v) =>
       v.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       v.email?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -45,10 +50,15 @@ const VolunteersList = () => {
   const fetchVolunteers = async () => {
     try {
       setIsLoading(true);
-      const resp = await apiClient.get("/volunteers");
-      const data = resp.data ?? [];
-      setVolunteers(data);
-      setFilteredVolunteers(data);
+      const params: any = { page, limit };
+      if (searchQuery) params.q = searchQuery;
+      if (statusFilter !== 'all') params.status = statusFilter === 'active' ? 'active' : 'inactive';
+      const resp = await apiClient.get("/volunteers", { params });
+      const data = resp.data ?? { items: [], total: 0, page: 1, limit };
+      setVolunteers(data.items || []);
+      setFilteredVolunteers(data.items || []);
+      setTotal(data.total ?? 0);
+      setPage(data.page ?? 1);
     } catch (error: any) {
       toast.error("Erro ao carregar voluntários");
     } finally {
@@ -115,6 +125,12 @@ const VolunteersList = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1"
             />
+            <select className="ml-2 p-2 rounded border" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value as any); setPage(1); }}>
+              <option value="all">Todos</option>
+              <option value="active">Ativos</option>
+              <option value="inactive">Inativos</option>
+            </select>
+            <Button variant="outline" size="sm" onClick={() => { setPage(1); fetchVolunteers(); }} className="ml-2">Filtrar</Button>
           </div>
 
           {isLoading ? (
@@ -165,6 +181,15 @@ const VolunteersList = () => {
               ))}
             </div>
           )}
+            {/* Pagination controls */}
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-sm text-muted-foreground">Total: {total}</div>
+              <div className="flex items-center gap-2">
+                <Button disabled={page <= 1} onClick={() => { setPage((p) => Math.max(1, p - 1)); fetchVolunteers(); }}>Anterior</Button>
+                <div className="px-3">{page}</div>
+                <Button disabled={page * limit >= total} onClick={() => { setPage((p) => p + 1); fetchVolunteers(); }}>Próxima</Button>
+              </div>
+            </div>
         </CardContent>
       </Card>
     </div>
