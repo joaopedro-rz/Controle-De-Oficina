@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, UseGuards, BadRequestException, Res, NotFoundException } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, UseGuards, BadRequestException, Res, NotFoundException, Delete } from '@nestjs/common';
 import type { VolunteerEntity } from './data.store';
 import { DataStoreService } from './data.store';
 import { JwtAuthGuard } from './jwt.guard';
@@ -45,6 +45,20 @@ export class VolunteersController {
     const updated = this.store.updateVolunteer(id, body);
     if (!updated) throw new BadRequestException('Volunteer not found');
     return updated;
+  }
+
+  @Get(':id')
+  getOne(@Param('id') id: string) {
+    const v = this.store.getVolunteer(id);
+    if (!v) throw new NotFoundException('Volunteer not found');
+    return v;
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    const ok = this.store.deleteVolunteer(id);
+    if (!ok) throw new BadRequestException('Volunteer not found');
+    return { success: true };
   }
 
   @Get(':id/term')

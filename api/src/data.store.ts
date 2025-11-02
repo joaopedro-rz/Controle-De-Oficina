@@ -65,6 +65,14 @@ export class DataStoreService {
     return this.volunteers[idx];
   }
 
+  deleteVolunteer(id: string): boolean {
+    const idx = this.volunteers.findIndex(v => v.id === id);
+    if (idx === -1) return false;
+    // mark as inactive and set exit_date if not set
+    this.volunteers[idx] = { ...this.volunteers[idx], is_active: false, exit_date: this.volunteers[idx].exit_date ?? new Date().toISOString() };
+    return true;
+  }
+
   // WORKSHOPS
   listWorkshops(): WorkshopEntity[] {
     return this.workshops;
