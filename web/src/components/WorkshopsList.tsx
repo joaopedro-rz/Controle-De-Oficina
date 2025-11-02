@@ -23,9 +23,13 @@ const WorkshopsList = () => {
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [filteredWorkshops, setFilteredWorkshops] = useState<Workshop[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(20);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     fetchWorkshops();
@@ -42,11 +46,15 @@ const WorkshopsList = () => {
   const fetchWorkshops = async () => {
     try {
       setIsLoading(true);
-      const resp = await apiClient.get("/workshops");
-      // Assumimos que a resposta possui um array no body
-      const data = resp.data ?? [];
-      setWorkshops(data);
-      setFilteredWorkshops(data);
+      const params: any = { page, limit };
+      if (searchQuery) params.q = searchQuery;
+      if (statusFilter !== 'all') params.status = statusFilter === 'active' ? 'active' : 'inactive';
+      const resp = await apiClient.get("/workshops", { params });
+      const data = resp.data ?? { items: [], total: 0, page: 1, limit };
+      setWorkshops(data.items || []);
+      setFilteredWorkshops(data.items || []);
+      setTotal(data.total ?? 0);
+      setPage(data.page ?? 1);
     } catch (error: any) {
       toast.error("Erro ao carregar oficinas");
     } finally {
@@ -93,6 +101,12 @@ const WorkshopsList = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1"
             />
+            <select className="ml-2 p-2 rounded border" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value as any); setPage(1); }}>
+              <option value="all">Todos</option>
+              <option value="active">Ativas</option>
+              <option value="inactive">Inativas</option>
+            </select>
+            <Button variant="outline" size="sm" onClick={() => { setPage(1); fetchWorkshops(); }} className="ml-2">Filtrar</Button>
           </div>
 
           {isLoading ? (
@@ -133,6 +147,14 @@ const WorkshopsList = () => {
               ))}
             </div>
           )}
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-sm text-muted-foreground">Total: {total}</div>
+              <div className="flex items-center gap-2">
+                <Button disabled={page <= 1} onClick={() => { setPage((p) => Math.max(1, p - 1)); fetchWorkshops(); }}>Anterior</Button>
+                <div className="px-3">{page}</div>
+                <Button disabled={page * limit >= total} onClick={() => { setPage((p) => p + 1); fetchWorkshops(); }}>Próxima</Button>
+              </div>
+            </div>
         </CardContent>
       </Card>
     </div>

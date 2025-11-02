@@ -11,8 +11,23 @@ export class VolunteersController {
   constructor(private readonly store: DataStoreService) {}
 
   @Get()
-  list(): VolunteerEntity[] {
-    return this.store.listVolunteers();
+  list(
+    @Query('q') q?: string,
+    @Query('status') status?: 'active' | 'inactive',
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const p = page ? Math.max(1, Number(page) || 1) : 1;
+    const l = limit ? Math.max(1, Number(limit) || 20) : 20;
+    const res = this.store.listVolunteers({ q: q ?? undefined, status: status ?? undefined, page: p, limit: l });
+    return res;
+  }
+
+  @Get(':id')
+  getOne(@Param('id') id: string) {
+    const v = this.store.getVolunteer(id);
+    if (!v) throw new NotFoundException('Volunteer not found');
+    return v;
   }
 
   @Post()
