@@ -49,8 +49,26 @@ export class DataStoreService {
   private participations: ParticipationEntity[] = [];
 
   // VOLUNTEERS
-  listVolunteers(): VolunteerEntity[] {
-    return this.volunteers;
+  /**
+   * List volunteers with optional pagination and filtering.
+   * filter: { q?: string, status?: 'active'|'inactive', page?: number, limit?: number }
+   */
+  listVolunteers(filter?: { q?: string; status?: 'active' | 'inactive'; page?: number; limit?: number }) {
+    let list = this.volunteers.slice();
+    if (filter?.q) {
+      const q = filter.q.toLowerCase();
+      list = list.filter((v) => (v.full_name || '').toLowerCase().includes(q));
+    }
+    if (filter?.status) {
+      if (filter.status === 'active') list = list.filter((v) => v.is_active === true);
+      else if (filter.status === 'inactive') list = list.filter((v) => v.is_active === false);
+    }
+    const total = list.length;
+    const page = Math.max(1, filter?.page ?? 1);
+    const limit = Math.max(1, filter?.limit ?? 20);
+    const start = (page - 1) * limit;
+    const items = list.slice(start, start + limit);
+    return { items, total, page, limit };
   }
   createVolunteer(payload: Omit<VolunteerEntity, 'id' | 'created_at'>): VolunteerEntity {
     const now = new Date().toISOString();
@@ -63,6 +81,14 @@ export class DataStoreService {
     if (idx === -1) return undefined;
     this.volunteers[idx] = { ...this.volunteers[idx], ...payload };
     return this.volunteers[idx];
+  }
+
+  deleteVolunteer(id: string): boolean {
+    const idx = this.volunteers.findIndex(v => v.id === id);
+    if (idx === -1) return false;
+    // marca como inativo e seta exit_date
+    this.volunteers[idx] = { ...this.volunteers[idx], is_active: false, exit_date: this.volunteers[idx].exit_date ?? new Date().toISOString() };
+    return true;
   }
 
   // WORKSHOPS
