@@ -7,6 +7,9 @@ import {
   Put,
   UseGuards,
   BadRequestException,
+  Query,
+  Delete,
+  NotFoundException,
 } from '@nestjs/common';
 import type { WorkshopEntity } from './data.store';
 import { DataStoreService } from './data.store';
@@ -27,8 +30,22 @@ export class WorkshopsController {
   constructor(private readonly store: DataStoreService) {}
 
   @Get()
-  list(): WorkshopEntity[] {
-    return this.store.listWorkshops();
+  list(
+    @Query('q') q?: string,
+    @Query('status') status?: 'active' | 'inactive',
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const p = page ? Math.max(1, Number(page) || 1) : 1;
+    const l = limit ? Math.max(1, Number(limit) || 20) : 20;
+    return this.store.listWorkshops({ q: q ?? undefined, status: status ?? undefined, page: p, limit: l });
+  }
+
+  @Get(':id')
+  getOne(@Param('id') id: string) {
+    const w = this.store.getWorkshop(id);
+    if (!w) throw new NotFoundException('Workshop not found');
+    return w;
   }
 
   @Post()
@@ -69,5 +86,12 @@ export class WorkshopsController {
     const updated = this.store.updateWorkshop(id, body);
     if (!updated) throw new BadRequestException('Workshop not found');
     return updated;
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    const ok = this.store.deleteWorkshop(id);
+    if (!ok) throw new BadRequestException('Workshop not found');
+    return { success: true };
   }
 }
