@@ -86,7 +86,7 @@ export class DataStoreService {
   deleteVolunteer(id: string): boolean {
     const idx = this.volunteers.findIndex(v => v.id === id);
     if (idx === -1) return false;
-    // marca como inativo e seta exit_date
+    // mark as inactive and set exit_date if not set
     this.volunteers[idx] = { ...this.volunteers[idx], is_active: false, exit_date: this.volunteers[idx].exit_date ?? new Date().toISOString() };
     return true;
   }
