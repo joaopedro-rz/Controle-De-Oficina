@@ -66,6 +66,27 @@ const VolunteersList = () => {
     setShowHistory(true);
   };
 
+  const handleGenerateTerm = async (volunteer: Volunteer) => {
+    try {
+      setIsLoading(true);
+      const resp = await apiClient.get(`/volunteers/${volunteer.id}/term`, { responseType: 'blob' });
+      const blob = new Blob([resp.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `termo-${volunteer.full_name.replace(/\s+/g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('Download iniciado');
+    } catch (error: any) {
+      toast.error('Erro ao gerar termo');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleCloseForm = () => {
     setShowForm(false);
     setSelectedVolunteer(null);
@@ -155,6 +176,9 @@ const VolunteersList = () => {
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleEdit(volunteer); }}>
                         Editar
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleGenerateTerm(volunteer); }}>
+                        Gerar Termo
                       </Button>
                       <Button variant="secondary" size="sm" className="gap-1" onClick={(e) => { e.stopPropagation(); handleHistory(volunteer); }}>
                         <History className="h-3 w-3" /> Histórico
