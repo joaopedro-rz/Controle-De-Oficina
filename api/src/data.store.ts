@@ -92,8 +92,26 @@ export class DataStoreService {
   }
 
   // WORKSHOPS
-  listWorkshops(): WorkshopEntity[] {
-    return this.workshops;
+  /**
+   * List workshops with optional pagination and filtering.
+   * filter: { q?: string, status?: 'active'|'inactive', page?: number, limit?: number }
+   */
+  listWorkshops(filter?: { q?: string; status?: 'active' | 'inactive'; page?: number; limit?: number }) {
+    let list = this.workshops.slice();
+    if (filter?.q) {
+      const q = filter.q.toLowerCase();
+      list = list.filter((w) => (w.name || '').toLowerCase().includes(q) || (w.description || '').toLowerCase().includes(q));
+    }
+    if (filter?.status) {
+      if (filter.status === 'active') list = list.filter((w) => w.is_active === true);
+      else if (filter.status === 'inactive') list = list.filter((w) => w.is_active === false);
+    }
+    const total = list.length;
+    const page = Math.max(1, filter?.page ?? 1);
+    const limit = Math.max(1, filter?.limit ?? 20);
+    const start = (page - 1) * limit;
+    const items = list.slice(start, start + limit);
+    return { items, total, page, limit };
   }
   createWorkshop(payload: Omit<WorkshopEntity, 'id' | 'created_at'>): WorkshopEntity {
     const now = new Date().toISOString();
@@ -106,6 +124,14 @@ export class DataStoreService {
     if (idx === -1) return undefined;
     this.workshops[idx] = { ...this.workshops[idx], ...payload };
     return this.workshops[idx];
+  }
+
+  deleteWorkshop(id: string): boolean {
+    const idx = this.workshops.findIndex(w => w.id === id);
+    if (idx === -1) return false;
+    // marca como inativa
+    this.workshops[idx] = { ...this.workshops[idx], is_active: false };
+    return true;
   }
 
   // PARTICIPATIONS
