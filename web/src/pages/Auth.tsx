@@ -72,7 +72,8 @@ const Auth = () => {
       const resp = await apiClient.post("/auth/signup", {
         email: signupForm.email,
         password: signupForm.password,
-        full_name: signupForm.full_name,
+        full_name: signupForm.full_name,    
+        isSuperAdmin: false
       });
 
       if (resp.status >= 400) {

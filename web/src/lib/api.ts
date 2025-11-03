@@ -36,6 +36,10 @@ apiClient.interceptors.response.use(
         window.location.href = '/auth';
       }
     }
+  }
+);
+
+// Gerenciamento de refresh token para evitar múltiplos requests simultâneos
 let isRefreshing = false as boolean;
 let pendingRequests: Array<(token: string) => void> = [];
 
