@@ -9,4 +9,5 @@ COPY . .
 
 EXPOSE 4000
 
-CMD ["npm", "run", "start:dev"]
+# Use ASCII-only CMD to avoid shell parse issues
+CMD ["npm", "run", "start:dev"]
