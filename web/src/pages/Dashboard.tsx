@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, Calendar } from "lucide-react";
+import { LogOut, Users, Calendar, List } from "lucide-react";
 import { toast } from "sonner";
 import VolunteersList from "@/components/VolunteersList";
 import WorkshopsList from "@/components/WorkshopsList";
+import Participations from "@/components/Participations";
 import { apiClient } from "@/lib/api";
 
 const Dashboard = () => {
@@ -88,7 +89,7 @@ const Dashboard = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="volunteers" className="space-y-6">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
+          <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3">
             <TabsTrigger value="volunteers" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Voluntários
@@ -96,6 +97,10 @@ const Dashboard = () => {
             <TabsTrigger value="workshops" className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               Oficinas
+            </TabsTrigger>
+            <TabsTrigger value="participations" className="flex items-center gap-2">
+              <List className="h-4 w-4" />
+              Participações
             </TabsTrigger>
           </TabsList>
 
@@ -105,6 +110,10 @@ const Dashboard = () => {
 
           <TabsContent value="workshops">
             <WorkshopsList />
+          </TabsContent>
+
+          <TabsContent value="participations">
+            <Participations />
           </TabsContent>
         </Tabs>
       </main>
