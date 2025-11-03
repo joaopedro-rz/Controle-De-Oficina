@@ -12,9 +12,10 @@ export class CreateParticipationDto {
   @IsUUID()
   workshopId: string;
 
-  @ApiProperty({ example: '2025-11-03', description: 'Data da participação (YYYY-MM-DD)' })
+  @ApiPropertyOptional({ example: '2025-11-03', description: 'Data da participação (YYYY-MM-DD). Se omitida, assume o dia atual.' })
+  @IsOptional()
   @IsDateString()
-  date: string;
+  date?: string;
 
   @ApiPropertyOptional({ example: ParticipationRole.ASSISTANT, description: 'Papel na participação', enum: ParticipationRole })
   @IsOptional()

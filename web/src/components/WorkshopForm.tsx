@@ -56,12 +56,17 @@ const WorkshopForm = ({ workshop, onClose }: WorkshopFormProps) => {
         return;
       }
 
+      // Normaliza payload para o backend (camelCase) evitando 400 por propriedades desconhecidas
+      const descParts = [
+        formData.description?.trim() || '',
+        formData.schedule?.trim() ? `Horário: ${formData.schedule.trim()}` : '',
+        formData.location?.trim() ? `Local: ${formData.location.trim()}` : '',
+      ].filter(Boolean);
       const dataToSave = {
-        ...formData,
-        description: formData.description || null,
-        schedule: formData.schedule || null,
-        location: formData.location || null,
-      };
+        name: formData.name.trim(),
+        description: descParts.length ? descParts.join('\n') : null,
+        isActive: !!formData.is_active,
+      } as any;
 
       if (workshop) {
         await apiClient.put(`/workshops/${workshop.id}`, dataToSave);

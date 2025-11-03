@@ -18,9 +18,9 @@ import VolunteersList from '../VolunteersList';
 
 describe('VolunteersList', () => {
   it('renders volunteers from apiClient', async () => {
-    (apiClient.get as any).mockResolvedValueOnce({ data: [
-      { id: '1', full_name: 'João', email: 'a@b.com', phone: null, entry_date: '', exit_date: null, is_active: true, created_at: '' }
-    ] });
+    (apiClient.get as any).mockResolvedValueOnce({ data: { items: [
+      { id: '1', fullName: 'João', email: 'a@b.com', status: 'ACTIVE', createdAt: new Date().toISOString() }
+    ] } });
 
     render(<VolunteersList />);
 

@@ -37,13 +37,39 @@ const VolunteerHistory = ({ volunteerId, volunteerName, onClose }: Props) => {
         let list: Participation[] = [];
         try {
           const histPt = await apiClient.get(`/participacoes/${volunteerId}`);
-          list = histPt.data ?? [];
+          // Normaliza camelCase -> snake_case
+          const arr = (histPt.data ?? []) as any[];
+          list = arr.map((p: any) => ({
+            id: p.id,
+            volunteer_id: p.volunteerId ?? p.volunteer_id,
+            workshop_id: p.workshopId ?? p.workshop_id,
+            date: p.date ? new Date(p.date).toISOString().slice(0, 10) : null,
+            role: p.role ?? null,
+            hours: p.hours ?? null,
+            notes: p.notes ?? null,
+          }));
         } catch {
           // fallback para rota EN
           const histEn = await apiClient.get(`/participations/volunteer/${volunteerId}`);
-          list = histEn.data ?? [];
+          const arr = (histEn.data ?? []) as any[];
+          list = arr.map((p: any) => ({
+            id: p.id,
+            volunteer_id: p.volunteerId ?? p.volunteer_id,
+            workshop_id: p.workshopId ?? p.workshop_id,
+            date: p.date ? new Date(p.date).toISOString().slice(0, 10) : null,
+            role: p.role ?? null,
+            hours: p.hours ?? null,
+            notes: p.notes ?? null,
+          }));
         }
         const ws = await apiClient.get(`/workshops`);
+        const wsData = ws.data ?? { items: [] };
+        const wsItems = (wsData.items ?? []) as any[];
+        const workshopsNorm: Workshop[] = wsItems.map((w: any) => ({
+          id: w.id,
+          name: w.name,
+          is_active: Boolean(w.isActive ?? true),
+        }));
         // garante ordenação desc por data
         list.sort((a, b) => {
           const da = a.date ? new Date(a.date).getTime() : 0;
@@ -51,7 +77,7 @@ const VolunteerHistory = ({ volunteerId, volunteerName, onClose }: Props) => {
           return db - da;
         });
         setItems(list);
-        setWorkshops(ws.data ?? []);
+        setWorkshops(workshopsNorm);
       } catch (e) {
         toast.error("Erro ao carregar histórico");
       } finally {

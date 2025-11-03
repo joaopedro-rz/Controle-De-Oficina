@@ -52,6 +52,15 @@ export class ParticipationsService {
     const workshop = await this.workshopsService.findOne(dto.workshopId);
     if (!workshop) throw new BadRequestException('Workshop not found');
 
+    // Se a data não vier informada, assume o dia atual (YYYY-MM-DD)
+    if (!dto.date) {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      dto.date = `${yyyy}-${mm}-${dd}`;
+    }
+
     const participation = this.participationRepo.create(dto);
     return this.participationRepo.save(participation);
   }

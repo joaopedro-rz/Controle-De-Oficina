@@ -51,8 +51,19 @@ const WorkshopsList = () => {
       if (statusFilter !== 'all') params.status = statusFilter === 'active' ? 'active' : 'inactive';
       const resp = await apiClient.get("/workshops", { params });
       const data = resp.data ?? { items: [], total: 0, page: 1, limit };
-      setWorkshops(data.items || []);
-      setFilteredWorkshops(data.items || []);
+      // Normaliza shape camelCase (API) -> snake_case (front)
+      const items: Workshop[] = (data.items || []).map((w: any) => ({
+        id: w.id,
+        name: w.name,
+        description: w.description ?? null,
+        // schedule/location não existem no backend atual; mantemos nulos
+        schedule: w.schedule ?? null,
+        location: w.location ?? null,
+        is_active: w.isActive ?? true,
+        created_at: w.createdAt ?? new Date().toISOString(),
+      }));
+      setWorkshops(items);
+      setFilteredWorkshops(items);
       setTotal(data.total ?? 0);
       setPage(data.page ?? 1);
     } catch (error: any) {

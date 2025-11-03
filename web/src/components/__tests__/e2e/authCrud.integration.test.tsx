@@ -22,7 +22,7 @@ const server = setupServer(
   }),
 
   rest.get('http://localhost:3001/workshops', (req, res, ctx) => {
-    return res(ctx.status(200), ctx.json(workshops));
+    return res(ctx.status(200), ctx.json({ items: workshops }));
   }),
 
   rest.post('http://localhost:3001/workshops', async (req, res, ctx) => {

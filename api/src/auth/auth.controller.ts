@@ -8,13 +8,40 @@ import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nes
 import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { LogoutDto } from './dto/logout.dto';
+import { SignupDto } from './dto/signup.dto';
+import { UsersService } from '../users/users.service';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   private limiter = new RateLimiterMemory({ points: 5, duration: 60 }); // 5 req/min por IP
 
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
+
+  @Post('signup')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Criar novo usuário (cadastro)' })
+  @ApiBody({ type: SignupDto })
+  @ApiResponse({ status: 201, description: 'Usuário criado com sucesso.' })
+  async signup(@Body() body: SignupDto) {
+    const user = await this.usersService.create({
+      name: body.full_name,
+      email: body.email,
+      password: body.password,
+      isSuperAdmin: body.isSuperAdmin ?? false,
+    });
+    // Retorna o usuário criado (sem hash, pois service já oculta ao selecionar campos)
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      isSuperAdmin: user.isSuperAdmin,
+      createdAt: user.createdAt,
+    };
+  }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)

@@ -46,9 +46,10 @@ const VolunteersList = () => {
 
   useEffect(() => {
     // local filtering (keeps previous behaviour while server-side search is also supported)
+    const q = searchQuery.toLowerCase();
     const filtered = volunteers.filter((v) =>
-      v.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.email?.toLowerCase().includes(searchQuery.toLowerCase())
+      (v.full_name || '').toLowerCase().includes(q) ||
+      (v.email || '').toLowerCase().includes(q)
     );
     setFilteredVolunteers(filtered);
   }, [searchQuery, volunteers]);
@@ -61,8 +62,19 @@ const VolunteersList = () => {
       if (statusFilter !== 'all') params.status = statusFilter === 'active' ? 'active' : 'inactive';
       const resp = await apiClient.get("/volunteers", { params });
       const data = resp.data ?? { items: [], total: 0, page: 1, limit };
-      setVolunteers(data.items || []);
-      setFilteredVolunteers(data.items || []);
+      // Normaliza o shape vindo da API (camelCase) para o usado no front (snake_case)
+      const items: Volunteer[] = (data.items || []).map((v: any) => ({
+        id: v.id,
+        full_name: v.fullName ?? `${v.firstName ?? ''} ${v.lastName ?? ''}`.trim(),
+        email: v.email ?? null,
+        phone: v.phone ?? null,
+        entry_date: v.startDate ? new Date(v.startDate).toISOString().slice(0, 10) : '',
+        exit_date: v.endDate ? new Date(v.endDate).toISOString().slice(0, 10) : null,
+        is_active: (v.status ?? 'ACTIVE') === 'ACTIVE',
+        created_at: v.createdAt ?? new Date().toISOString(),
+      }));
+      setVolunteers(items);
+      setFilteredVolunteers(items);
       setTotal(data.total ?? 0);
       setPage(data.page ?? 1);
     } catch (error: any) {
@@ -117,7 +129,17 @@ const VolunteersList = () => {
         is_active: editFormData.is_active,
       };
       const resp = await apiClient.put(`/volunteers/${id}`, payload);
-      const updated = resp.data;
+      const u = resp.data;
+      const updated: Volunteer = {
+        id: u.id,
+        full_name: u.fullName ?? `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim(),
+        email: u.email ?? null,
+        phone: u.phone ?? null,
+        entry_date: u.startDate ? new Date(u.startDate).toISOString().slice(0, 10) : '',
+        exit_date: u.endDate ? new Date(u.endDate).toISOString().slice(0, 10) : null,
+        is_active: (u.status ?? 'ACTIVE') === 'ACTIVE',
+        created_at: u.createdAt ?? new Date().toISOString(),
+      };
       setVolunteers((prev) => prev.map((v) => (v.id === id ? updated : v)));
       setFilteredVolunteers((prev) => prev.map((v) => (v.id === id ? updated : v)));
       toast.success('Voluntário atualizado');

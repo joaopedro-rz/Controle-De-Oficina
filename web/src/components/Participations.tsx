@@ -32,8 +32,23 @@ const Participations = () => {
           apiClient.get("/workshops"),
           apiClient.get("/volunteers"),
         ]);
-        const ws = (w.data ?? []) as Workshop[];
-        const vs = (v.data ?? []) as Volunteer[];
+        // Normaliza workshops (API paginada camelCase -> front snake_case)
+        const wsData = w.data ?? { items: [] };
+        const wsItems = (wsData.items ?? []) as any[];
+        const ws: Workshop[] = wsItems.map((x: any) => ({
+          id: x.id,
+          name: x.name,
+          is_active: Boolean(x.isActive ?? true),
+        }));
+
+        // Normaliza volunteers (camelCase -> snake_case)
+        const vData = v.data ?? { items: [] };
+        const vItems = (vData.items ?? []) as any[];
+        const vs: Volunteer[] = vItems.map((u: any) => ({
+          id: u.id,
+          full_name: u.fullName ?? `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim(),
+        }));
+
         setWorkshops(ws);
         setVolunteers(vs);
         const firstActive = ws.find(x => x.is_active) ?? ws[0];
@@ -52,7 +67,17 @@ const Participations = () => {
       if (!selectedWorkshopId) return;
       try {
         const r = await apiClient.get(`/participations`, { params: { workshopId: selectedWorkshopId } });
-        setParticipations(r.data ?? []);
+        const arr = (r.data ?? []) as any[];
+        const parts: Participation[] = arr.map((p: any) => ({
+          id: p.id,
+          volunteer_id: p.volunteerId ?? p.volunteer_id,
+          workshop_id: p.workshopId ?? p.workshop_id,
+          date: p.date ? new Date(p.date).toISOString().slice(0, 10) : null,
+          role: p.role ?? null,
+          hours: p.hours ?? null,
+          notes: p.notes ?? null,
+        }));
+        setParticipations(parts);
       } catch (e) {
         toast.error("Erro ao carregar participações");
       }
@@ -75,11 +100,22 @@ const Participations = () => {
     if (!selectedWorkshopId || !newVolunteerId) return;
     setIsSaving(true);
     try {
-      await apiClient.post('/participations', { workshop_id: selectedWorkshopId, volunteer_id: newVolunteerId });
+      // Envia em camelCase para o backend (ValidationPipe com whitelist)
+      await apiClient.post('/participations', { workshopId: selectedWorkshopId, volunteerId: newVolunteerId });
       toast.success("Voluntário vinculado à oficina");
       setNewVolunteerId("");
       const r = await apiClient.get(`/participations`, { params: { workshopId: selectedWorkshopId } });
-      setParticipations(r.data ?? []);
+      const arr = (r.data ?? []) as any[];
+      const parts: Participation[] = arr.map((p: any) => ({
+        id: p.id,
+        volunteer_id: p.volunteerId ?? p.volunteer_id,
+        workshop_id: p.workshopId ?? p.workshop_id,
+        date: p.date ? new Date(p.date).toISOString().slice(0, 10) : null,
+        role: p.role ?? null,
+        hours: p.hours ?? null,
+        notes: p.notes ?? null,
+      }));
+      setParticipations(parts);
     } catch (e: any) {
       toast.error(e?.response?.data?.message || "Erro ao vincular voluntário");
     } finally {

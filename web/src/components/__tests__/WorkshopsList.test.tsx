@@ -18,9 +18,9 @@ import WorkshopsList from '../WorkshopsList';
 
 describe('WorkshopsList', () => {
   it('renders workshops from apiClient', async () => {
-    (apiClient.get as any).mockResolvedValueOnce({ data: [
+    (apiClient.get as any).mockResolvedValueOnce({ data: { items: [
       { id: '1', name: 'Oficina A', description: 'Descrição A', schedule: null, location: null, is_active: true, created_at: '' }
-    ] });
+    ] } });
 
     render(<WorkshopsList />);
 

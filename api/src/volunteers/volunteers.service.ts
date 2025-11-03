@@ -76,9 +76,26 @@ export class VolunteersService {
     // chama o método correto do service
     const participations =
       await this.participationsService.listByVolunteer(volunteerId);
-    const workshops = await Promise.all(
-      participations.map((p) => this.workshopsService.findOne(p.workshopId)),
-    );
+    // Busca oficinas com tolerância a registros removidos
+    const workshops = (
+      await Promise.all(
+        participations.map(async (p) => {
+          try {
+            return await this.workshopsService.findOne(p.workshopId);
+          } catch {
+            return null;
+          }
+        }),
+      )
+    ).filter((w): w is NonNullable<typeof w> => Boolean(w));
+
+    const fmt = (d?: Date | string | null): string => {
+      if (!d) return '-';
+      const date = d instanceof Date ? d : new Date(d);
+      return isNaN(date.getTime())
+        ? '-'
+        : date.toLocaleDateString('pt-BR');
+    };
 
     /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
     const doc = new PDFDocument({ size: 'A4', margin: 50 });
@@ -92,13 +109,9 @@ export class VolunteersService {
     if (volunteer.email) doc.text(`Email: ${volunteer.email}`);
     if (volunteer.phone) doc.text(`Telefone: ${volunteer.phone}`);
     if (volunteer.cpf) doc.text(`CPF: ${volunteer.cpf}`);
-    doc.text(
-      `Data de entrada: ${volunteer.startDate.toLocaleDateString('pt-BR')}`,
-    );
+    doc.text(`Data de entrada: ${fmt(volunteer.startDate)}`);
     if (volunteer.endDate)
-      doc.text(
-        `Data de saída: ${volunteer.endDate.toLocaleDateString('pt-BR')}`,
-      );
+      doc.text(`Data de saída: ${fmt(volunteer.endDate)}`);
     doc.moveDown(0.5);
 
     doc.fontSize(13).text('Oficinas vinculadas:', { underline: true });
